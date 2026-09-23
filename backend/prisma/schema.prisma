@@ -1,0 +1,227 @@
+// Schéma Prisma — KIDO commercial.
+// Postgres (Neon en production, Postgres local en dev).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  HOST
+  ADMIN
+}
+
+// Bridage des fonctionnalités par palier — voir PLAN_LIMITS côté code pour
+// les valeurs exactes (durée max, participants max, qualité vidéo, quota
+// d'enregistrement).
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum StreamMode {
+  ECRAN
+  CAMERA
+  LES_DEUX
+  AUDIO
+}
+
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum TicketStatus {
+  PENDING
+  VALID
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+// Niveaux d'accès du "Kido Pass" — chaque billet en porte un, affiché comme
+// un badge de couleur différente sur le pass digital.
+enum AccessLevel {
+  STANDARD
+  VIP
+  SPEAKER
+  STAFF
+}
+
+enum PaymentProviderName {
+  STRIPE
+  CINETPAY
+  FREE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  passwordHash    String?  @map("password_hash")
+  googleId        String?  @unique @map("google_id")
+  avatarUrl       String?  @map("avatar_url")
+  bio             String?
+  country         String?
+  role            Role     @default(USER)
+  plan            Plan     @default(FREE)
+  stripeCustomerId String? @map("stripe_customer_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  events          Event[]
+  tickets         Ticket[]
+  subscriptions   Subscription[]
+  videos          Video[]
+  videoLikes      VideoLike[]
+  followedBy      Follow[] @relation("creator")
+  following       Follow[] @relation("follower")
+
+  @@map("users")
+}
+
+model Subscription {
+  id                     String             @id @default(uuid())
+  userId                 String             @map("user_id")
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider               PaymentProviderName
+  externalSubscriptionId String             @map("external_subscription_id")
+  status                 SubscriptionStatus
+  currentPeriodEnd       DateTime?          @map("current_period_end")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  @@unique([provider, externalSubscriptionId])
+  @@map("subscriptions")
+}
+
+model Event {
+  id           String      @id @default(uuid())
+  creatorId    String      @map("creator_id")
+  creator      User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  module       String      // concert | reunion | cinema | conference | match | prive
+  title        String
+  description  String?
+  category     String
+  coverUrl     String?     @map("cover_url")
+  trailerUrl   String?     @map("trailer_url")
+  startsAt     DateTime?   @map("starts_at")
+  priceCents   Int         @default(0) @map("price_cents")
+  currency     String      @default("XOF")
+  maxSeats     Int?        @map("max_seats")
+  seatsSold    Int         @default(0) @map("seats_sold")
+  visibility   Visibility  @default(PUBLIC)
+  streamMode   StreamMode  @default(ECRAN) @map("stream_mode")
+  status       EventStatus @default(SCHEDULED)
+  roomName     String      @unique @map("room_name")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  moderators   EventModerator[]
+  tickets      Ticket[]
+  videos       Video[]
+
+  @@index([visibility, status, startsAt])
+  @@map("events")
+}
+
+model EventModerator {
+  id        String   @id @default(uuid())
+  eventId   String   @map("event_id")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  email     String
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([eventId, email])
+  @@map("event_moderators")
+}
+
+// Le "Kido Pass" : chaque billet porte un niveau d'accès et, une fois payé,
+// un passToken JWT signé (HMAC SHA-256) qui encode {ticketId, eventId,
+// accessLevel}. Le statut en base reste la source de vérité anti-rejeu —
+// le JWT prouve l'authenticité, la base empêche la réutilisation.
+model Ticket {
+  id                String              @id @default(uuid())
+  eventId           String              @map("event_id")
+  event             Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  buyerId           String              @map("buyer_id")
+  buyer             User                @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  code              String              @unique
+  accessLevel       AccessLevel         @default(STANDARD) @map("access_level")
+  passToken         String?             @unique @map("pass_token")
+  status            TicketStatus        @default(PENDING)
+  pricePaidCents    Int                 @default(0) @map("price_paid_cents")
+  currency          String              @default("XOF")
+  paymentProvider   PaymentProviderName? @map("payment_provider")
+  paymentReference  String?             @map("payment_reference")
+  usedAt            DateTime?           @map("used_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  @@unique([paymentProvider, paymentReference])
+  @@index([eventId])
+  @@index([buyerId])
+  @@map("tickets")
+}
+
+model Follow {
+  creatorId  String   @map("creator_id")
+  creator    User     @relation("creator", fields: [creatorId], references: [id], onDelete: Cascade)
+  followerId String   @map("follower_id")
+  follower   User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@id([creatorId, followerId])
+  @@map("follows")
+}
+
+model Video {
+  id              String    @id @default(uuid())
+  creatorId       String    @map("creator_id")
+  creator         User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  sourceEventId   String?   @map("source_event_id")
+  sourceEvent     Event?    @relation(fields: [sourceEventId], references: [id], onDelete: SetNull)
+  title           String
+  description     String?
+  storageKey      String    @map("storage_key")
+  thumbnailKey    String?   @map("thumbnail_key")
+  durationSeconds Int?      @map("duration_seconds")
+  status          String    @default("processing") // processing | ready | failed
+  likeCount       Int       @default(0) @map("like_count")
+  viewCount       Int       @default(0) @map("view_count")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  likes           VideoLike[]
+
+  @@index([creatorId])
+  @@index([status, createdAt])
+  @@map("videos")
+}
+
+model VideoLike {
+  videoId   String   @map("video_id")
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([videoId, userId])
+  @@map("video_likes")
+}

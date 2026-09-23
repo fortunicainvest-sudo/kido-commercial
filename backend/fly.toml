@@ -1,0 +1,20 @@
+app = "kido-api"
+primary_region = "cdg"  # Paris — bonne latence Europe + correcte pour l'Afrique de l'Ouest francophone. "los" (Lagos) si le public est majoritairement ouest-africain.
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  PORT = "4000"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = false   # une salle live ne doit jamais être coupée pour inactivité
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

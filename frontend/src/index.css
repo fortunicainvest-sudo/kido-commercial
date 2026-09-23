@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@import "@fontsource/manrope/500.css";
+@import "@fontsource/manrope/700.css";
+@import "@fontsource/manrope/800.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+
+/* Tokens KIDO — noir violacé profond, un seul accent, deux familles.
+   Voir la note de direction visuelle : Apple (sobriété, typo) x
+   Netflix/Disney+ (rangées horizontales, héros plein écran, thème sombre). */
+@theme {
+  --color-ink: #0e0d12;
+  --color-panel: #17151d;
+  --color-panel-raised: #201d29;
+  --color-line: #2a2733;
+  --color-text: #f3f1f7;
+  --color-muted: #9c97ac;
+  --color-faint: #635e70;
+  --color-accent: #7c5cfc;
+  --color-accent-soft: #7c5cfc26;
+  --color-accent-strong: #9478ff;
+  --color-live: #f5a623;
+
+  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* Rangées horizontales façon Netflix — scroll tactile, pas de scrollbar visible. */
+.rail {
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
