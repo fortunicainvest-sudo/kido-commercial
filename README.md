@@ -24,13 +24,12 @@ cd backend
 cp .env.example .env        # puis remplis les variables (voir section 2)
 npm install
 npm run migrate             # crée les tables
-npm run dev                 # https://kido-backend.onrender.com
+npm run dev                 # https://api.render.com/deploy/srv-dapjbg8u01pc73crbb2g?key=B0J4f70tvKE
 # Frontend (dans un autre terminal)
 cd frontend
-cp .env.example .env 2>/dev/null || echo "VITE_API_URL=https://kido-backend.onrender.com > .env
+cp .env.example .env 2>/dev/null || echo "VITE_API_URL=https://api.render.com/deploy/srv-dapjbg8u01pc73crbb2g?key=B0J4f70tvKE > .env
 npm install
-npm run dev                 # http://localhost:5173
-```
+npm run dev                 # https://api.render.com/deploy/srv-dapjbg8u01pc73crbb2g?key=B0J4f70tvKE
 
 Sans aucune clé tierce configurée, l'appli tourne quand même : inscription,
 connexion, création d'événements, billets **gratuits**, explorateur et fil

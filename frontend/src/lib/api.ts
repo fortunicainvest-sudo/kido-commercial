@@ -1,6 +1,6 @@
 // Client HTTP minimal — pas de dépendance externe, juste fetch avec gestion
 // du token JWT et des erreurs de l'API dans un format cohérent.
-const API_URL = import.meta.env.VITE_API_URL || "https://kido-backend.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "https://api.render.com/deploy/srv-dapjbg8u01pc73crbb2g?key=B0J4f70tvKE";
 
 let currentToken: string | null = localStorage.getItem("kido_token");
 
