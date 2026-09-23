@@ -24,11 +24,10 @@ cd backend
 cp .env.example .env        # puis remplis les variables (voir section 2)
 npm install
 npm run migrate             # crée les tables
-npm run dev                 # http://localhost:4000
-
+npm run dev                 # https://kido-backend.onrender.com
 # Frontend (dans un autre terminal)
 cd frontend
-cp .env.example .env 2>/dev/null || echo "VITE_API_URL=http://localhost:4000/api" > .env
+cp .env.example .env 2>/dev/null || echo "VITE_API_URL=https://kido-backend.onrender.com > .env
 npm install
 npm run dev                 # http://localhost:5173
 ```

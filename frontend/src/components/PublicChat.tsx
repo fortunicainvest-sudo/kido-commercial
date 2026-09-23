@@ -4,7 +4,7 @@ import { getToken } from "../lib/api";
 
 interface ChatMsg { author: string; text: string; at: number }
 
-const SOCKET_URL = (import.meta.env.VITE_API_URL || "http://localhost:4000/api").replace(/\/api$/, "");
+const SOCKET_URL = (import.meta.env.VITE_API_URL || "https://kido-backend.onrender.com").replace(/\/api$/, "");
 
 /** Chat PUBLIC de la salle — tout le monde dans l'événement le voit, et
  *  c'est pour ça qu'il passe par notre backend (voir modules/realtime/socket.ts)
